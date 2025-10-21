@@ -3,21 +3,49 @@ use super::*;
 pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
     match e {
         Exp::Int(n) => Ok(Value::Int(*n)),
-
         Exp::Bool(b) => Ok(Value::Bool(*b)),
+        Exp::Str(s) => Ok(Value::Str(s.clone())),
 
-        Exp::Var(s) => match nv.get(s) {
+        Exp::Var(var) => match nv.get(var) {
             Some(v) => Ok(v.clone()),
-            None => Err(format!("{s} not bound")), // Corrected error message
+            None => Err(format!("{var} not bound")),
         },
 
-        Exp::Plus { left, right } => add(interp(left, nv)?, interp(right, nv)?),
+        Exp::Plus { left, right } => {
+            let l_val = interp(left, nv)?;
+            let r_val = interp(right, nv)?;
+            match (l_val, r_val) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Int(l + r)),
+                (l, r) => Err(format!("+ expects two integers, got {l} + {r}")),
+            }
+        }
+
+        Exp::Concat { left, right } => {
+            let l_val = interp(left, nv)?;
+            let r_val = interp(right, nv)?;
+            match (l_val, r_val) {
+                (Value::Str(l), Value::Str(r)) => {
+                    Ok(Value::Str(format!("{l}{r}")))
+                }
+                (l, r) => Err(format!("++ expects two strings, got {l} + {r}")),
+            }
+        }
+
+        Exp::LessThan { left, right } => {
+            let l_val = interp(left, nv)?;
+            let r_val = interp(right, nv)?;
+            match (l_val, r_val) {
+                (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l < r)),
+                (l, r) => Err(format!("< expects two integers, got {l} + {r}")),
+            }
+        }
 
         Exp::Cnd { tst, thn, els } => {
-            if boolean_decision(interp(tst, nv)?)? {
-                interp(thn, nv)
-            } else {
-                interp(els, nv)
+            let tst_val = interp(tst, nv)?;
+            match tst_val {
+                Value::Bool(true) => interp(thn, nv),
+                Value::Bool(false) => interp(els, nv),
+                v => Err(format!("boolean expected, found {v}")),
             }
         }
 
@@ -34,46 +62,18 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
             nv: nv.clone(),
         }),
 
-        Exp::LessThan { left, right } => {
-            let left_val = interp(left, nv)?;
-            let right_val = interp(right, nv)?;
-            if let (Value::Int(n1), Value::Int(n2)) = (&left_val, &right_val) {
-                Ok(Value::Bool(*n1 < *n2))
-            } else {
-                Err(format!(
-                    "< expects two integers, got {:?} and {:?}",
-                    left_val, right_val
-                ))
-            }
-        }
-
         Exp::App { fun, arg } => {
             let fun_val = interp(fun, nv)?;
             let arg_val = interp(arg, nv)?;
 
-            if let Value::Fun { var, body, nv: fun_nv } = fun_val {
-                let mut new_nv = fun_nv;
-                new_nv.insert(var, arg_val);
-                interp(&body, &new_nv)
-            } else {
-                Err("Expected a function in application".to_string())
+            match fun_val {
+                Value::Fun { var, body, nv: closure_nv } => {
+                    let mut new_nv = closure_nv.clone();
+                    new_nv.insert(var, arg_val);
+                    interp(&body, &new_nv)
+                }
+                v => Err(format!("function expected, found {v}")),
             }
         }
-    }
-}
-
-fn add(v1: Value, v2: Value) -> Result<Value, String> {
-    if let (Value::Int(n1), Value::Int(n2)) = (&v1, &v2) {
-        Ok(Value::Int(n1 + n2))
-    } else {
-        Err(format!("+ expects two integers, got {:?} + {:?}", v1, v2))
-    }
-}
-
-fn boolean_decision(v: Value) -> Result<bool, String> {
-    if let Value::Bool(b) = v {
-        Ok(b)
-    } else {
-        Err(format!("boolean expected, found {:?}", v))
     }
 }
