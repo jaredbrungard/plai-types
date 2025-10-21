@@ -2,6 +2,7 @@ mod interp;
 mod parse;
 
 use interp::interp;
+use interp::tc;
 use parse::parse_expression;
 use parse::tokenize;
 use std::collections::HashMap;
@@ -21,11 +22,16 @@ enum Token {
     RightParen,
     LeftBrace,
     RightBrace,
+    Colon,
+    RightArrow,
     Equal,
     If,
     Else,
     Let,
     Fn,
+    IntType,
+    BoolType,
+    StrType,
 }
 
 impl fmt::Display for Token {
@@ -42,11 +48,16 @@ impl fmt::Display for Token {
             Token::RightParen => write!(f, ")"),
             Token::LeftBrace => write!(f, "{{"),
             Token::RightBrace => write!(f, "}}"),
+            Token::Colon => write!(f, ":"),
+            Token::RightArrow => write!(f, "->"),
             Token::Equal => write!(f, "="),
             Token::If => write!(f, "if"),
             Token::Else => write!(f, "else"),
             Token::Let => write!(f, "let"),
             Token::Fn => write!(f, "fn"),
+            Token::IntType => write!(f, "int"),
+            Token::BoolType => write!(f, "bool"),
+            Token::StrType => write!(f, "str"),
         }
     }
 }
@@ -62,7 +73,7 @@ enum Exp {
     LessThan { left: Box<Exp>, right: Box<Exp> },
     Cnd { tst: Box<Exp>, thn: Box<Exp>, els: Box<Exp> },
     Let1 { var: String, value: Box<Exp>, body: Box<Exp> },
-    Lam { var: String, body: Box<Exp> },
+    Lam { var: String, var_type: Type, body: Box<Exp> },
     App { fun: Box<Exp>, arg: Box<Exp> },
 }
 
@@ -80,7 +91,9 @@ impl fmt::Display for Exp {
             Exp::Let1 { var, value, body } => {
                 write!(f, "(let {var} {value} {body})")
             }
-            Exp::Lam { var, body } => { write!(f, "(fn ({var}) {body})") }
+            Exp::Lam { var, var_type, body } => {
+                write!(f, "(fn ({var}: {var_type}) {body})")
+            }
             Exp::App { fun, arg } => write!(f, "({fun} {arg})"),
         }
     }
@@ -91,7 +104,7 @@ enum Value {
     Int(isize),
     Bool(bool),
     Str(String),
-    Fun { var: String, body: Box<Exp>, nv: Env },
+    Fun { var: String, var_type: Type, body: Box<Exp>, nv: Env },
 }
 
 impl fmt::Display for Value {
@@ -100,9 +113,9 @@ impl fmt::Display for Value {
             Value::Int(n) => write!(f, "{n}"),
             Value::Bool(b) => write!(f, "{b}"),
             Value::Str(s) => write!(f, "{s}"),
-            Value::Fun { var, body, nv } => write!(
+            Value::Fun { var, var_type, body, nv } => write!(
                 f,
-                "closure((lambda ({var}) {body}), {nv:?})"
+                "closure((fn ({var}: {var_type}) {body}), {nv:?})"
             ),
         }
     }
@@ -110,8 +123,30 @@ impl fmt::Display for Value {
 
 type Env = HashMap<String, Value>;
 
+#[derive(Debug, PartialEq, Clone)]
+enum Type {
+    Int,
+    Bool,
+    Str,
+    Fun { param: Box<Type>, result: Box<Type> },
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Type::Int => write!(f, "int"),
+            Type::Bool => write!(f, "bool"),
+            Type::Str => write!(f, "str"),
+            Type::Fun { param, result } => write!(f, "({param} -> {result})"),
+        }
+    }
+}
+
+type TEnv = HashMap<String, Type>;
+
 fn main() {
     let empty_nv = Env::new();
+    let empty_tnv = TEnv::new();
 
     loop {
         // print a prompt
@@ -175,6 +210,16 @@ fn main() {
             }
         };
         println!("ast   : {ast}");
+
+        // type check
+        let t = match tc(&ast, &empty_tnv) {
+            Ok(t) => t,
+            Err(msg) => {
+                println!("Type check failure: {msg}");
+                continue;
+            }
+        };
+        println!("type  : {t}");
 
         // evaluate
         let v = match interp(&ast, &empty_nv) {

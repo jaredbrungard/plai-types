@@ -21,13 +21,45 @@ if "a" < "b" {
 } else {
     "not"
 }
-fn(x) {
+fn(x: str) {
     x ++ "!"
 }("hello")
-let concat = fn(a) {
-    fn(b) {
+let concat = fn(a: str) {
+    fn(b: str) {
         a ++ b
     }
 } {
     concat("foo")("bar")
+}
+fn(x: int) {
+    x + 1
+}(5)
+let add = fn(a: int) {
+    fn(b: int) {
+        a + b
+    }
+} {
+    add(3)(4)
+}
+fn(f: (int -> int)) {
+    f(10)
+}(fn(x: int) {
+    x + 2
+})
+let identity = fn(x: int) {
+    x
+} {
+    identity(42)
+}
+if 1 < 2 {
+    100
+} else {
+    200
+}
+let b = true {
+    if b {
+        "true"
+    } else {
+        "false"
+    }
 }

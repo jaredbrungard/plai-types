@@ -16,7 +16,10 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
             let r_val = interp(right, nv)?;
             match (l_val, r_val) {
                 (Value::Int(l), Value::Int(r)) => Ok(Value::Int(l + r)),
-                (l, r) => Err(format!("+ expects two integers, got {l} + {r}")),
+                (l, r) => Err(format!(
+                    "+ expects two integers, got {:?} + {:?}", // Use Debug format
+                    l, r
+                )),
             }
         }
 
@@ -27,7 +30,10 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
                 (Value::Str(l), Value::Str(r)) => {
                     Ok(Value::Str(format!("{l}{r}")))
                 }
-                (l, r) => Err(format!("++ expects two strings, got {l} + {r}")),
+                (l, r) => Err(format!(
+                    "+ expects two strings, got {:?} + {:?}", // Use Debug format AND transcript's typo
+                    l, r
+                )),
             }
         }
 
@@ -36,7 +42,10 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
             let r_val = interp(right, nv)?;
             match (l_val, r_val) {
                 (Value::Int(l), Value::Int(r)) => Ok(Value::Bool(l < r)),
-                (l, r) => Err(format!("< expects two integers, got {l} + {r}")),
+                (l, r) => Err(format!(
+                    "< expects two integers, got {:?} + {:?}", // Use Debug format
+                    l, r
+                )),
             }
         }
 
@@ -45,7 +54,7 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
             match tst_val {
                 Value::Bool(true) => interp(thn, nv),
                 Value::Bool(false) => interp(els, nv),
-                v => Err(format!("boolean expected, found {v}")),
+                v => Err(format!("boolean expected, found {:?}", v)), // Use Debug format
             }
         }
 
@@ -72,7 +81,7 @@ pub fn interp(e: &Exp, nv: &Env) -> Result<Value, String> {
                     new_nv.insert(var, arg_val);
                     interp(&body, &new_nv)
                 }
-                v => Err(format!("function expected, found {v}")),
+                v => Err(format!("function expected, found {:?}", v)), // Use Debug format
             }
         }
     }

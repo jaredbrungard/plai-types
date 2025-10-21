@@ -1,17 +1,22 @@
-<html><head></head><body><h1>Interpreter</h1>
+<html><head></head><body><h1>Type checker</h1>
 
-<p>Start by copying over and updating your interpreter in <code>interp.rs</code>
-using code from previous assignments.</p>
+<p>Write a type checker as the function <code>tc</code> in <code>interp.rs</code> with the
+following type signature:</p>
 
-<p>I have provided:</p>
+<pre><code>pub fn tc(e: &amp;Exp, tnv: &amp;TEnv) -&gt; Result&lt;Type, String&gt;
+</code></pre>
 
-<ul>
-<li>A new <code>Str</code> type complete with tokenizer and parser.</li>
-</ul>
+<p><code>TEnv</code> and <code>Type</code> are defined in <code>main.rs</code> along with all other code
+interpreter types.</p>
 
-<p>You must implement:</p>
+<p>The structure of <code>tc</code> should be very similar overall to that of
+<code>interp</code> as the book and lecture notes showed, but you should be
+returning a <code>Type</code> for each expression checked. Follow the typing
+rules outlined in the book.</p>
 
-<ul>
-<li>The <code>++</code> operator to  concatenate two strings.</li>
-</ul>
+<p>Note that we are omitting recursive types for now.</p>
+
+<p>Try to figure out what is required by looking at the existing code,
+the book, and the test cases. If you are still unsure of how
+something is supposed to work, please ask for help.</p>
 </body></html>

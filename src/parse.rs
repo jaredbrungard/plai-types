@@ -16,26 +16,31 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
     while let Some(&ch) = chars.peek() {
         match ch {
             '0'..='9' | '-' => {
-                let mut int_str = String::new();
-                int_str.push(ch);
                 chars.next();
+                if chars.peek() == Some(&'>') {
+                    tokens.push(Token::RightArrow);
+                    chars.next();
+                } else {
+                    let mut int_str = String::new();
+                    int_str.push(ch);
 
-                while let Some(&ch) = chars.peek() {
-                    if ch.is_ascii_digit() {
-                        int_str.push(ch);
-                        chars.next();
-                    } else {
-                        break;
+                    while let Some(&ch) = chars.peek() {
+                        if ch.is_ascii_digit() {
+                            int_str.push(ch);
+                            chars.next();
+                        } else {
+                            break;
+                        }
                     }
-                }
 
-                match int_str.parse::<isize>() {
-                    Ok(i) => tokens.push(Token::Int(i)),
-                    Err(_) => {
-                        return Err(format!(
-                            "Invalid integer format: {}",
-                            int_str
-                        ));
+                    match int_str.parse::<isize>() {
+                        Ok(i) => tokens.push(Token::Int(i)),
+                        Err(_) => {
+                            return Err(format!(
+                                "Invalid integer format: {}",
+                                int_str
+                            ));
+                        }
                     }
                 }
             }
@@ -66,6 +71,10 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
             }
             '}' => {
                 tokens.push(Token::RightBrace);
+                chars.next();
+            }
+            ':' => {
+                tokens.push(Token::Colon);
                 chars.next();
             }
             '=' => {
@@ -110,6 +119,9 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     "true" => tokens.push(Token::Bool(true)),
                     "false" => tokens.push(Token::Bool(false)),
                     "fn" => tokens.push(Token::Fn),
+                    "int" => tokens.push(Token::IntType),
+                    "bool" => tokens.push(Token::BoolType),
+                    "str" => tokens.push(Token::StrType),
                     _ => tokens.push(Token::Symbol(ident_str)),
                 }
             }
@@ -133,7 +145,8 @@ struct Parser<'a> {
 // factor           -> ( expression ) | conditional | let1 | lambda | int | bool | str | symbol
 // conditional      -> if expression { expression } else { expression }
 // let1             -> let symbol = expression { expression }
-// lambda           -> fn ( symbol ) { expression }
+// lambda           -> fn ( symbol : typeexp ) { expression }
+// typeexp          -> num | bool | str | (typeexp -> typeexp)
 
 impl<'a> Parser<'a> {
     fn new(tokens: &'a Vec<Token>) -> Self {
@@ -274,7 +287,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_lambda(&mut self) -> Result<Exp, String> {
-        // fn ( symbol ) { exp }
+        // fn ( symbol : typeexp ) { exp }
         self.expect_token(&Token::Fn)?;
         self.expect_token(&Token::LeftParen)?;
         let Some(Token::Symbol(s)) = self.current_token() else {
@@ -282,11 +295,44 @@ impl<'a> Parser<'a> {
         };
         let var = s.clone();
         self.advance();
+        self.expect_token(&Token::Colon)?;
+        let param_type = self.parse_typeexp()?;
         self.expect_token(&Token::RightParen)?;
         self.expect_token(&Token::LeftBrace)?;
         let body = Box::new(self.parse_expression()?);
         self.expect_token(&Token::RightBrace)?;
-        Ok(Exp::Lam { var, body })
+        Ok(Exp::Lam { var, var_type: param_type, body })
+    }
+
+    fn parse_typeexp(&mut self) -> Result<Type, String> {
+        // num | bool | str | (typeexp -> typeexp)
+        match self.current_token() {
+            Some(Token::IntType) => {
+                self.advance();
+                Ok(Type::Int)
+            }
+
+            Some(Token::BoolType) => {
+                self.advance();
+                Ok(Type::Bool)
+            }
+
+            Some(Token::StrType) => {
+                self.advance();
+                Ok(Type::Str)
+            }
+
+            Some(Token::LeftParen) => {
+                self.expect_token(&Token::LeftParen)?;
+                let param = Box::new(self.parse_typeexp()?);
+                self.expect_token(&Token::RightArrow)?;
+                let result = Box::new(self.parse_typeexp()?);
+                self.expect_token(&Token::RightParen)?;
+                Ok(Type::Fun { param, result })
+            }
+
+            _ => Err(format!("Expected a type")),
+        }
     }
 
     fn expect_token(&mut self, expected: &Token) -> Result<(), String> {

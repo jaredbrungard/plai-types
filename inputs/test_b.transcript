@@ -3,42 +3,49 @@
 < "hello"
 > tokens: ["hello"]
 > ast   : "hello"
+> type  : str
 > result: hello
 > 
 > Please enter an expression:
 < ""
 > tokens: [""]
 > ast   : ""
+> type  : str
 > result: 
 > 
 > Please enter an expression:
 < "world"
 > tokens: ["world"]
 > ast   : "world"
+> type  : str
 > result: world
 > 
 > Please enter an expression:
 < "hello" ++ "world"
 > tokens: ["hello", ++, "world"]
 > ast   : (++ "hello" "world")
+> type  : str
 > result: helloworld
 > 
 > Please enter an expression:
 < "foo" ++ "" ++ "bar"
 > tokens: ["foo", ++, "", ++, "bar"]
 > ast   : (++ (++ "foo" "") "bar")
+> type  : str
 > result: foobar
 > 
 > Please enter an expression:
 < ("a" ++ "b") ++ "c"
 > tokens: [(, "a", ++, "b", ), ++, "c"]
 > ast   : (++ (++ "a" "b") "c")
+> type  : str
 > result: abc
 > 
 > Please enter an expression:
 < "a" ++ ("b" ++ "c")
 > tokens: ["a", ++, (, "b", ++, "c", )]
 > ast   : (++ "a" (++ "b" "c"))
+> type  : str
 > result: abc
 > 
 > Please enter an expression:
@@ -47,6 +54,7 @@
 < }
 > tokens: [let, s, =, "hi", {, s, ++, " there", }]
 > ast   : (let s "hi" (++ s " there"))
+> type  : str
 > result: hi there
 > 
 > Please enter an expression:
@@ -55,6 +63,7 @@
 < }
 > tokens: [let, x, =, "num: ", ++, "42", {, x, }]
 > ast   : (let x (++ "num: " "42") x)
+> type  : str
 > result: num: 42
 > 
 > Please enter an expression:
@@ -65,6 +74,7 @@
 < }
 > tokens: [if, true, {, "yes", }, else, {, "no", }]
 > ast   : (if true "yes" "no")
+> type  : str
 > result: yes
 > 
 > Please enter an expression:
@@ -75,26 +85,96 @@
 < }
 > tokens: [if, "a", <, "b", {, "less", }, else, {, "not", }]
 > ast   : (if (< "a" "b") "less" "not")
-> Runtime error: < expects two integers, got Str("a") + Str("b")
+> Type check failure: not both numbers
 > 
 > Please enter an expression:
-< fn(x) {
+< fn(x: str) {
 <     x ++ "!"
 < }("hello")
-> tokens: [fn, (, x, ), {, x, ++, "!", }, (, "hello", )]
-> ast   : ((fn (x) (++ x "!")) "hello")
+> tokens: [fn, (, x, :, str, ), {, x, ++, "!", }, (, "hello", )]
+> ast   : ((fn (x: str) (++ x "!")) "hello")
+> type  : str
 > result: hello!
 > 
 > Please enter an expression:
-< let concat = fn(a) {
-<     fn(b) {
+< let concat = fn(a: str) {
+<     fn(b: str) {
 <         a ++ b
 <     }
 < } {
 <     concat("foo")("bar")
 < }
-> tokens: [let, concat, =, fn, (, a, ), {, fn, (, b, ), {, a, ++, b, }, }, {, concat, (, "foo", ), (, "bar", ), }]
-> ast   : (let concat (fn (a) (fn (b) (++ a b))) ((concat "foo") "bar"))
+> tokens: [let, concat, =, fn, (, a, :, str, ), {, fn, (, b, :, str, ), {, a, ++, b, }, }, {, concat, (, "foo", ), (, "bar", ), }]
+> ast   : (let concat (fn (a: str) (fn (b: str) (++ a b))) ((concat "foo") "bar"))
+> type  : str
 > result: foobar
+> 
+> Please enter an expression:
+< fn(x: int) {
+<     x + 1
+< }(5)
+> tokens: [fn, (, x, :, int, ), {, x, +, 1, }, (, 5, )]
+> ast   : ((fn (x: int) (+ x 1)) 5)
+> type  : int
+> result: 6
+> 
+> Please enter an expression:
+< let add = fn(a: int) {
+<     fn(b: int) {
+<         a + b
+<     }
+< } {
+<     add(3)(4)
+< }
+> tokens: [let, add, =, fn, (, a, :, int, ), {, fn, (, b, :, int, ), {, a, +, b, }, }, {, add, (, 3, ), (, 4, ), }]
+> ast   : (let add (fn (a: int) (fn (b: int) (+ a b))) ((add 3) 4))
+> type  : int
+> result: 7
+> 
+> Please enter an expression:
+< fn(f: (int -> int)) {
+<     f(10)
+< }(fn(x: int) {
+<     x + 2
+< })
+> tokens: [fn, (, f, :, (, int, ->, int, ), ), {, f, (, 10, ), }, (, fn, (, x, :, int, ), {, x, +, 2, }, )]
+> ast   : ((fn (f: (int -> int)) (f 10)) (fn (x: int) (+ x 2)))
+> type  : int
+> result: 12
+> 
+> Please enter an expression:
+< let identity = fn(x: int) {
+<     x
+< } {
+<     identity(42)
+< }
+> tokens: [let, identity, =, fn, (, x, :, int, ), {, x, }, {, identity, (, 42, ), }]
+> ast   : (let identity (fn (x: int) x) (identity 42))
+> type  : int
+> result: 42
+> 
+> Please enter an expression:
+< if 1 < 2 {
+<     100
+< } else {
+<     200
+< }
+> tokens: [if, 1, <, 2, {, 100, }, else, {, 200, }]
+> ast   : (if (< 1 2) 100 200)
+> type  : int
+> result: 100
+> 
+> Please enter an expression:
+< let b = true {
+<     if b {
+<         "true"
+<     } else {
+<         "false"
+<     }
+< }
+> tokens: [let, b, =, true, {, if, b, {, "true", }, else, {, "false", }, }]
+> ast   : (let b true (if b "true" "false"))
+> type  : str
+> result: true
 > 
 > Please enter an expression:
