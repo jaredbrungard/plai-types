@@ -1,0 +1,50 @@
+1
+0
+-4
+true
+false
+67 + 32
+3 + 4 + 9 + 12
+1 + -2 + 3 + -4 + 5
+if true { 1 + (2 + 3) } else { 1 + 2 + 3 }
+if false { 1 + (2 + 3) } else { false }
+let x = 89 { x }
+let x = 15 { 73 }
+let y = 3 { if true { y } else { y + 9 } }
+let z = 123 { let z = 4 { z + 2 } + z }
+let z = 123 { z + let z = 4 { z + 2 } }
+let a = 123 { let a = 9 { a + -2 } + let a = 4 { a + 2 } } + -13
+(fn(a) { a + a })(13)
+fn(a) { a + a }(13)
+let f = fn(x) { x + -1 } { f(10) }
+fn(y) { 1 }(10)
+let x = 2 { fn(y) { 1 }(10) }
+let f = fn(y) {x} { let x=1 { f(10) } }
+let x = 1 { let f = fn(y){x} { let x = 2 { f(10) } } }
+let x = 3 { fn(y) { x + y } }(4)
+let y = 3 { fn(y) { y + 1 } }(5)
+fn(x) {x+x}(12) + fn(x) {x+x}(12)
+let add5 = fn(x) {x+5} {add5(3) + 12 + add5(9)}
+let adder = fn(x) {fn(y) {x+y}} {adder(2)(3) + adder(9)(8) + 1 + fn(g){-4+g}(adder(2)(3))}
+let adder = fn(x) {fn(y) {x+y}} {let add8 = adder(8) {add8(2) + adder(4)(6)}}
+5 + 6
+"hello" ++ " world"
+5 ++ 6
+"hello" + " world"
+5 + (6 + 7)
+5 + (6 + "hi")
+if true { 1 } else { 2 }
+if 4 { 1 } else { 2 }
+if true { 1 } else { "hi" }
+1 < 5
+5 < 1
+5 < 5
+true < false
+true < 4
+3 < false
+"a" < "b"
+"a" < 5
+5 < "2"
+if 3 < 4 { 3 } else { 4 }
+let min = fn(x) { fn(y) { if x < y { x } else { y } } } { min }
+let min = fn(x) { fn(y) { if x < y { x } else { y } } } { min(9)(3) }

@@ -1,0 +1,100 @@
+> 
+> Please enter an expression:
+< "hello"
+> tokens: ["hello"]
+> ast   : "hello"
+> result: hello
+> 
+> Please enter an expression:
+< ""
+> tokens: [""]
+> ast   : ""
+> result: 
+> 
+> Please enter an expression:
+< "world"
+> tokens: ["world"]
+> ast   : "world"
+> result: world
+> 
+> Please enter an expression:
+< "hello" ++ "world"
+> tokens: ["hello", ++, "world"]
+> ast   : (++ "hello" "world")
+> result: helloworld
+> 
+> Please enter an expression:
+< "foo" ++ "" ++ "bar"
+> tokens: ["foo", ++, "", ++, "bar"]
+> ast   : (++ (++ "foo" "") "bar")
+> result: foobar
+> 
+> Please enter an expression:
+< ("a" ++ "b") ++ "c"
+> tokens: [(, "a", ++, "b", ), ++, "c"]
+> ast   : (++ (++ "a" "b") "c")
+> result: abc
+> 
+> Please enter an expression:
+< "a" ++ ("b" ++ "c")
+> tokens: ["a", ++, (, "b", ++, "c", )]
+> ast   : (++ "a" (++ "b" "c"))
+> result: abc
+> 
+> Please enter an expression:
+< let s = "hi" {
+<     s ++ " there"
+< }
+> tokens: [let, s, =, "hi", {, s, ++, " there", }]
+> ast   : (let s "hi" (++ s " there"))
+> result: hi there
+> 
+> Please enter an expression:
+< let x = "num: " ++ "42" {
+<     x
+< }
+> tokens: [let, x, =, "num: ", ++, "42", {, x, }]
+> ast   : (let x (++ "num: " "42") x)
+> result: num: 42
+> 
+> Please enter an expression:
+< if true {
+<     "yes"
+< } else {
+<     "no"
+< }
+> tokens: [if, true, {, "yes", }, else, {, "no", }]
+> ast   : (if true "yes" "no")
+> result: yes
+> 
+> Please enter an expression:
+< if "a" < "b" {
+<     "less"
+< } else {
+<     "not"
+< }
+> tokens: [if, "a", <, "b", {, "less", }, else, {, "not", }]
+> ast   : (if (< "a" "b") "less" "not")
+> Runtime error: < expects two integers, got Str("a") + Str("b")
+> 
+> Please enter an expression:
+< fn(x) {
+<     x ++ "!"
+< }("hello")
+> tokens: [fn, (, x, ), {, x, ++, "!", }, (, "hello", )]
+> ast   : ((fn (x) (++ x "!")) "hello")
+> result: hello!
+> 
+> Please enter an expression:
+< let concat = fn(a) {
+<     fn(b) {
+<         a ++ b
+<     }
+< } {
+<     concat("foo")("bar")
+< }
+> tokens: [let, concat, =, fn, (, a, ), {, fn, (, b, ), {, a, ++, b, }, }, {, concat, (, "foo", ), (, "bar", ), }]
+> ast   : (let concat (fn (a) (fn (b) (++ a b))) ((concat "foo") "bar"))
+> result: foobar
+> 
+> Please enter an expression:

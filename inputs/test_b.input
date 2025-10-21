@@ -1,0 +1,33 @@
+"hello"
+""
+"world"
+"hello" ++ "world"
+"foo" ++ "" ++ "bar"
+("a" ++ "b") ++ "c"
+"a" ++ ("b" ++ "c")
+let s = "hi" {
+    s ++ " there"
+}
+let x = "num: " ++ "42" {
+    x
+}
+if true {
+    "yes"
+} else {
+    "no"
+}
+if "a" < "b" {
+    "less"
+} else {
+    "not"
+}
+fn(x) {
+    x ++ "!"
+}("hello")
+let concat = fn(a) {
+    fn(b) {
+        a ++ b
+    }
+} {
+    concat("foo")("bar")
+}
